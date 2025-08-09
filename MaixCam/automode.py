@@ -67,11 +67,7 @@ output_safearea_dimensions = []
 output_starts_dimensions = []
 cluster_arr = []
 
-# pid_x = PID(Kp=0.60, Ki=0.0, Kd=0.0, setpoint=0.0)        #初始PID
-# pid_y = PID(Kp=0.75, Ki=0.0, Kd=0.0, setpoint=0.0)
-# pid_rz = PID(Kp=0.35, Ki=0.0, Kd=0.0, setpoint=0.0)
-
-pid_x = PID(Kp=0.60, Ki=0.0, Kd=0.05, setpoint=0.0)
+pid_x = PID(Kp=0.60, Ki=0.0, Kd=0.05, setpoint=0.0)         #初始PID
 pid_y = PID(Kp=0.75, Ki=0.0, Kd=0.05, setpoint=0.0)
 pid_rz = PID(Kp=0.35, Ki=0.0, Kd=0.05, setpoint=0.0)
 
@@ -415,7 +411,11 @@ def get_zone(current_deg:int):
         return 4
     else:
         return 1
+    
 def yolo_detect2():
+    """
+    yolo识别方案2，使用ball_safe_area_v3_bf16.mud模型
+    """
     global ifallcolordetect
     global my_location, location_timestamp
     while not app.need_exit() and not stop_event.is_set():
@@ -525,6 +525,9 @@ def yolo_detect2():
         output_starts_dimensions = detected_starts
         
 def yolo_detect():
+    """
+    yolo识别方案1，使用默认的模型
+    """
     global ifallcolordetect
     while not app.need_exit() and not stop_event.is_set():
         img = cam.read()
@@ -942,27 +945,8 @@ def send_to_safearea2():
                 else:
                     vx = 0
                     vy = 20
-            # elif safearea_buttom > 160:
-            #     frame, frame_timestamp = get_latest_frame()
-            #     cost_time = time.ticks_diff(frame_timestamp, time.ticks_ms())
-            #     if cost_time > 50:
-            #         print(f"WARING!! High Delay!! {cost_time:.2f}")
-            #     framebox = output_safearea_dimensions[0].x, output_safearea_dimensions[0].y, output_safearea_dimensions[0].width, output_safearea_dimensions[0].height
-            #     color = compare_color_dominance(frame, framebox, False)
-            #     if color == against_color:
-            #         for _ in range(10): # 旋转时间，确定旋转出安全区视角
-            #             send_uart_command(0,0,60,180)
-            #             time.sleep_ms(50)
-            #         while not output_safearea_dimensions:
-            #             send_uart_command(0,0,60,180)
-            #             time.sleep_ms(50)
-            #         continue
             
         else:
-            # frame, frame_timestamp = get_latest_frame()
-            # cost_time = time.ticks_diff(frame_timestamp, time.ticks_ms())
-            # if cost_time > 50:
-            #     print(f"WARING!! High Delay!! {cost_time:.2f}")
             ratio = colorratio.get_ratio()
             print(f"ratio={ratio},color={my_color}")
             if ratio > 0.58:
@@ -970,13 +954,7 @@ def send_to_safearea2():
                 vy = 0
                 in_position = True
                 print("send in !!!")
-            # elif ratio < 0.4:
-            #     ratio = calculate_y_zone_color_ratio(frame, 40, 180, against_color, False)
-            #     if ratio > 0.58:
-            #         for _ in range(50):
-            #             send_uart_command(0, -20, 40, 180)
-            #             time.sleep_ms(50)
-            #         continue
+
         print(f"vy = {vy} vx = {vx} rz = {rz}")    
         send_uart_command(int(vx), int(vy), int(rz), 180)
         time.sleep_ms(50)
@@ -1002,25 +980,6 @@ def set_my_color():
         colorratio.color = my_color
         my_ball = {my_color}
         against_ball = {against_color,'black','yellow'}
-
-# def has_ball():
-#     balls = 0
-#     if output_balls_dimensions:
-#         for ball in output_balls_dimensions:
-#             if ball in my_ball:
-#                 print(f"inside ball in my ball")
-#                 if output_safearea_dimensions:
-#                     if ball.center_x > output_safearea_dimensions[0].x and ball.center_x < output_safearea_dimensions[0].x + output_safearea_dimensions[0].width and ball.center_y > output_safearea_dimensions[0].y and ball.center_y < output_safearea_dimensions[0].y + output_safearea_dimensions[0].height:
-#                         balls += 0
-#                     else:
-#                         balls += 1
-#                     print(f"inside safe area deetctionm")
-#                 else:
-#                     balls += 1
-#     else:
-#         print("no output ball_dimensions")
-#     print(f"balls counts {balls}")
-#     return balls
 
 def has_ball():
     balls = 0
@@ -1049,11 +1008,7 @@ def random_func():
     for _ in range(10):
         if output_balls_dimensions:
             return
-        # func_rz = (rz_val)
-        # func_y = (vy_val - 220)
-
         rz = rz_val
-        # vy = pid_y(func_y)
         vy = 60
         vx = 0
         if output_safearea_dimensions:
@@ -1208,66 +1163,9 @@ def finding_ball():
         print("重置时间")
         return begin_to_find_ball
     return time.ticks_ms()
-    
-# def catch_ball():
-#     while output_balls_dimensions:
-#         nearest_distance = 999999
-#         nearest_ball = None
-#         for detected_ball in output_balls_dimensions:
-#             if isTheFirst: # 第一次只认本方颜色
-#                 if detected_ball.color != my_color:
-#                     continue
-#             if detected_ball.color == my_color or detected_ball.color == 'black' or detected_ball.color == 'yellow' or detected_ball.color == 'unknown':
-#             # if detected_ball.color in my_ball:
-#                 if output_safearea_dimensions:  # 判断是否在安全区内
-#                     if detected_ball.center_x > output_safearea_dimensions[0].x and detected_ball.center_x < output_safearea_dimensions[0].x + output_safearea_dimensions[0].width and detected_ball.center_y > output_safearea_dimensions[0].y and detected_ball.center_y < output_safearea_dimensions[0].y + output_safearea_dimensions[0].height:
-#                         continue
-#                 distance_sqrt = (160 - detected_ball.center_x)**2 + (112 - detected_ball.center_y)**2
-#                 if detected_ball.color != my_color:
-#                     distance_sqrt = distance_sqrt/color_weight_map[detected_ball.color]
 
-#                 if distance_sqrt < nearest_distance:
-#                     nearest_distance = distance_sqrt
-#                     nearest_ball = detected_ball
-#         if output_safearea_dimensions:
-#             if nearest_ball.center_x < (output_safearea_dimensions[0].width + output_safearea_dimensions[0].x) and nearest_ball.center_x > (output_safearea_dimensions[0].x) and nearest_ball.center_y < output_safearea_dimensions[0].y:
-#                 print(f"obstructed by safe area!")
-#                 func_z = (nearest_ball.center_x - 160) * 1.5
-#                 if output_safearea_dimensions[0].x + output_safearea_dimensions[0].width/2 > 160:
-#                     rz = pid_rz(func_z)
-#                     send_uart_command(-90, 40, int(rz), 0)
-#                 elif output_safearea_dimensions[0].x + output_safearea_dimensions[0].width/2 < 160:
-#                     rz = pid_rz(func_z)
-#                     send_uart_command(90, 40, int(rz), 0)
-
-#                 print(f"{rz}")
-#         if nearest_ball.center_y < 175 or (nearest_ball.center_x < 115 or nearest_ball.center_x > 250):
-#             func_x = (190 - nearest_ball.center_x)
-#             func_y = (nearest_ball.center_y - 220)
-#             func_z = (nearest_ball.center_x - 190)
-
-#             vx = pid_x(func_x)
-#             vy = pid_y(func_y)
-#             rz = pid_rz(func_z)
-
-#             send_uart_command(int(vx), int(vy), int(0), 0)
-
-#         # fixed nearest_ball.center_y < 200 ===> nearest_ball.center_x < 200
-#         else:
-#             for i in range(5):
-#                 send_uart_command(0, -10, 0, 180)
-#                 time.sleep_ms(100)
-    
-#             print("(+) Ball Captured!")
-#             capture_feedback()
 def car_ctrl():
     global begin_to_find_ball
-    # while start_button.value():
-    #     print(f"Waiting for start... {start_button.value()}")
-    #     time.sleep_ms(50)
-    
-    # global initial_angle
-    # initial_angle = get_current_angle()
     cam_servo_ctrl(39)
     # 半秒等待
     # time.sleep_ms(500)
@@ -1308,11 +1206,6 @@ def car_ctrl():
         if nearest_ball == None:
             current_time = time.ticks_ms()
             cost_time_find = time.ticks_diff(current_time, begin_to_find_ball)
-            # if cost_time_find > 4000:
-            #     print("长时间未找到球")
-            #     cam_servo_ctrl(43)
-            #     time.sleep_ms(50)
-            #     shouled_cam_down = True
             time.sleep_ms(5)
             if abs(cost_time_find) > 4000:
                 print(f"time out 4s {cost_time_find} 开始找球时间 {begin_to_find_ball} 当前时间 {current_time}")
@@ -1477,62 +1370,10 @@ def car_ctrl():
                 # print(f"resetting begin_to_find_ball")
                 # begin_to_find_ball = time.ticks_ms()
             print(f"(-) No BLACK, YELLOW or {my_color} Detected! {turn_direction} {cost_time_find} {begin_to_find_ball}")
-
             send_uart_command(0, 0, 80*turn_direction, 0)
-
-            # force_time = 0
-
-            # while nearest_ball == None:
-            #     while force_time < 0.5:
-            #         send_uart_command(0, 0, 60, 0)
-
-            #         force_time += 0.1
-            #         time.sleep_ms(100)
-
-            #     force_time = 0
-
-            #     while force_time < 0.3:
-            #         send_uart_command(0, 0, 0, 0)
-
-            #         force_time += 0.1
-            #         time.sleep_ms(100)
         else:
-            # if shouled_cam_down:
-            #     cam_servo_ctrl(39)
-            #     time.sleep_ms(50)
-            #     shouled_cam_down = False
             begin_to_find_ball = time.ticks_ms()
             print(f"(+) Ball Detected! Turning direction ...")
-            # if (nearest_ball.center_x < 110 and nearest_ball.center_y > 165) or (nearest_ball.center_x > 200 and nearest_ball.center_y > 165):
-            #     vx = pid_x(0)
-            #     vy = pid_y((nearest_ball.center_y - 112))# negative vy, go backwards
-            #     rz = pid_rz(0)
-            #     send_uart_command(0, int(vy/2), 0, 0)
-            #     print(f"1 bf & br: {nearest_ball.center_x}, {nearest_ball.center_y}")
-            
-            # elif (nearest_ball.center_x < 110 and nearest_ball.center_y < 165) or (nearest_ball.center_x > 200 and nearest_ball.center_y < 165):
-            #     vx = pid_x(0)
-            #     vy = pid_y(0)
-            #     rz = pid_rz(nearest_ball.center_x - 160)
-
-            #     if 0 < rz < 50:
-            #         rz = 50
-            #     elif -50 < rz < 0:
-            #         rz = -50
-
-            #     send_uart_command(0, 0, int(rz/2), 0)
-            #     print(f"2 ul & ur: {nearest_ball.center_x}, {nearest_ball.center_y}")
-
-            # elif (nearest_ball.center_x > 110 and nearest_ball.center_x < 200) and nearest_ball.center_y < 170:
-            #     vx = pid_x(160 - nearest_ball.center_x)
-            #     vy = pid_y(nearest_ball.center_y - 180)
-            #     rz = pid_rz(0)
-            #     send_uart_command(int(vx/2), int(vy/2), 0, 0)
-            #     print(f"3 um: {nearest_ball.center_x}, {nearest_ball.center_y}")
-            # if nearest_ball.center_x > 160:
-            #     turn_direction = -1
-            # else:
-            #     turn_direction = 1
 
             if output_safearea_dimensions:
                 if nearest_ball.center_x < (output_safearea_dimensions[0].width + output_safearea_dimensions[0].x) and nearest_ball.center_x > (output_safearea_dimensions[0].x) and nearest_ball.center_y < output_safearea_dimensions[0].y:
@@ -1772,8 +1613,6 @@ auto_stop_timer = threading.Timer(360, lambda: stop_event.set())
 sensor_thread = threading.Thread(target=read_sensors_task)
 yolo_thread = threading.Thread(target=yolo_detect2)
 main_thread = threading.Thread(target=car_ctrl)
-# main_thread = threading.Thread(target=send_to_safearea)
-# main_thread = threading.Thread(target=print_output_safearea)
 
 set_my_color()
 sensor_thread.start()
